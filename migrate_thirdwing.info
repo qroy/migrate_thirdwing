@@ -9,3 +9,4 @@ dependencies[] = migrate_d2d
 files[] = migrate_thirdwing.migrate.inc
 files[] = user.inc
 files[] = node.inc
+files[] = file.inc

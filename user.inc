@@ -20,8 +20,13 @@ class ThirdwingUserMigration extends DrupalUser6Migration {
     $this->addFieldMapping('field_user_koorfunctie', 'field_koor');
     $this->addFieldMapping('field_user_karrijder', 'field_karrijder');
     $this->addFieldMapping('field_user_notities', 'field_notes');
-    $this->addFieldMapping('field_user_functie_bestuur', 'field_bestuur');
-    $this->addFieldMapping('field_user_functie_mc', 'field_menp');
+    $this->addFieldMapping('field_user_functie_bestuur', 'field_functie_bestuur');
+    $this->addFieldMapping('field_user_functie_mc', 'field_functie_mc');
+    $this->addFieldMapping('field_user_functie_cc', 'field_functie_concert');
+    $this->addFieldMapping('field_user_functie_pr', 'field_functie_pr');
+    $this->addFieldMapping('field_user_functie_fc', 'field_functie_feest');
+    $this->addFieldMapping('field_user_functie_kc', 'field_functie_regie');
+    $this->addFieldMapping('field_user_functie_ir', 'field_functie_ir');
   }
 
   public function prepareRow($row) {
@@ -29,18 +34,7 @@ class ThirdwingUserMigration extends DrupalUser6Migration {
       return FALSE;
     }
     $row->field_postcode = str_replace(' ', '', $row->field_postcode);
-    
-    if ($row->field_sleepgroep_1 == 'I') { $row->field_sleepgroep_1 = 1;}
-    if ($row->field_sleepgroep_1 == 'II') { $row->field_sleepgroep_1 = 2;}
-    if ($row->field_sleepgroep_1 == 'III') { $row->field_sleepgroep_1 = 3;}
-    if ($row->field_sleepgroep_1 == 'IV') { $row->field_sleepgroep_1 = 4;}
-    if ($row->field_sleepgroep_1 == 'V') { $row->field_sleepgroep_1 = 5;}
-    
-    if ($row->field_koor == 'Toetsenist') { $row->field_koor = 'C1'; }
-    if ($row->field_koor == 'Gitarist') { $row->field_koor = 'C2'; }
-    if ($row->field_koor == 'Bassist') { $row->field_koor = 'C3'; }
-    if ($row->field_koor == 'Drummer') { $row->field_koor = 'C4'; }
-    
+
     if ($row->field_karrijder == '*') { $row->field_karrijder = 1;}
     
     return TRUE;

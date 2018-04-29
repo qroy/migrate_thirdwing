@@ -62,10 +62,11 @@ function migrate_thirdwing_migrate_api() {
       'Band' => 'Band',
       'Beheerder' => 'Beheerder',
       'Bestuur' => 'Bestuur',
-      'Commissie Faciliteiten' => 'Commissie Publieke Relaties',
+      'Commissie Concerten' => 'Commissie Concerten',
       'Commissie Interne Relaties' => 'Commissie Interne Relaties',
       'Commissie Koorregie' => 'Commissie Koorregie',
-      'Concertcommissie' => 'Concertcommissie',
+      'Commissie Publieke Relaties' => 'Commissie Publieke Relaties',
+      'Feestcommissie' => 'Feestcommissie',
       'Lid' => 'Leden',
       'Muziekcommissie' => 'Muziekcommissie',
       'Vriend' => 'Vrienden',
@@ -77,24 +78,78 @@ function migrate_thirdwing_migrate_api() {
 
   //Taxonomy
   $toegang_term_arguments = $common_arguments + array(
-    'machine_name' => 'ToegangTerm',
+    'machine_name' => 'Term_Toegang',
     'description' => t('Import Drupal 6 toegang terms into drupal 7'),
-    'source_vocabulary' => '4',  // "Photo category" vocabulary
+    'source_vocabulary' => '4',  // "Toegang" vocabulary
     'destination_vocabulary' => 'toegang',
   );
   Migration::registerMigration('DrupalTerm6Migration', $toegang_term_arguments['machine_name'], $toegang_term_arguments);
 
-  // Files
+  // Files documents
   $files_arguments = $common_arguments + array( 
-    'description' => t('Migration of files from Drupal 6'), 
+    'description' => t('Migration of document files from Drupal 6'), 
     'machine_name' => 'File',
     'user_migration' => 'User',
     'default_uid' => 1,
     'source_dir' => 'http://www.thirdwing.nl/',
     'destination_dir' => 'public://',
+    'bundle' => 'document',
   );
 
-  Migration::registerMigration('DrupalFile6Migration', $files_arguments['machine_name'], $files_arguments);
+  Migration::registerMigration('FileDocMigration', $files_arguments['machine_name'], $files_arguments);
+  
+  // Files verslagen
+  $verslag_arguments = $common_arguments + array( 
+    'description' => t('Migration of verslagen files from Drupal 6'), 
+    'machine_name' => 'Verslag',
+    'user_migration' => 'User',
+    'default_uid' => 1,
+    'source_dir' => 'http://www.thirdwing.nl/',
+    'destination_dir' => 'public://',
+    'bundle' => 'verslag',
+  );
+
+  Migration::registerMigration('FileVerslagMigration', $verslag_arguments['machine_name'], $verslag_arguments);
+  
+  // Files partituren
+  $partituur_arguments = $common_arguments + array( 
+    'description' => t('Migration of partituur files from Drupal 6'), 
+    'machine_name' => 'Partituur',
+    'user_migration' => 'User',
+    'default_uid' => 1,
+    'source_dir' => 'http://www.thirdwing.nl/',
+    'destination_dir' => 'public://',
+    'bundle' => 'partituur',
+  );
+
+  Migration::registerMigration('FilePartituurMigration', $partituur_arguments['machine_name'], $partituur_arguments);
+
+ // Images
+  $images_arguments = $common_arguments + array( 
+    'description' => t('Migration of image files from Drupal 6'), 
+    'machine_name' => 'Image',
+    'user_migration' => 'User',
+    'default_uid' => 1,
+    'source_dir' => 'http://www.thirdwing.nl/',
+    'destination_dir' => 'public://',
+    'bundle' => 'image',
+  );
+
+  Migration::registerMigration('FileImageMigration', $images_arguments['machine_name'], $images_arguments);
+
+ // Audio
+  $audio_arguments = $common_arguments + array( 
+    'description' => t('Migration of audio files from Drupal 6'), 
+    'machine_name' => 'Audio',
+    'user_migration' => 'User',
+    'default_uid' => 1,
+    'source_dir' => 'http://www.thirdwing.nl/',
+    'destination_dir' => 'public://',
+    'bundle' => 'audio',
+    'dependencies' => array('Node_Activiteiten','Node_Repertoire'),
+  );
+
+  Migration::registerMigration('FileAudioMigration', $audio_arguments['machine_name'], $audio_arguments);
 
   // Menus
   $menu_arguments = $common_arguments + array(
@@ -109,7 +164,7 @@ function migrate_thirdwing_migrate_api() {
     'machine_name' => 'MenuLink',
     'description' => t('Import Drupal 6 menu links'),
     'menu_migration' => 'Menu',
-    'node_migrations' => array('PaginaNode'),
+    'node_migrations' => array('Node_Pagina'),
   );
 
   Migration::registerMigration('DrupalMenuLinks6Migration', $menu_link_arguments['machine_name'], $menu_link_arguments);
@@ -122,18 +177,18 @@ function migrate_thirdwing_migrate_api() {
 
   // Nodes - activiteiten
   $activiteiten_node_arguments = $node_arguments + array(
-    'machine_name' => 'ActiviteitenNode',
+    'machine_name' => 'Node_Activiteiten',
     'description' => t('Import Drupal 6 activiteiten nodes'),
     'source_type' => 'activiteit', 
     'destination_type' => 'activiteit',
-    'dependencies' => array('ToegangTerm','User','ProgrammaNode','RepertoireNode','LocatieNode','File'),
+    'dependencies' => array('Term_Toegang','User','Node_Programma','Node_Repertoire','Node_Locatie','File','Image'),
   );
 
   Migration::registerMigration('ActiviteitenNodeMigration', $activiteiten_node_arguments['machine_name'], $activiteiten_node_arguments);
 
   // Nodes - programma
   $programma_node_arguments = $node_arguments + array(
-    'machine_name' => 'ProgrammaNode',
+    'machine_name' => 'Node_Programma',
     'description' => t('Import Drupal 6 programma nodes'),
     'source_type' => 'programma', 
     'destination_type' => 'repertoire',
@@ -144,7 +199,7 @@ function migrate_thirdwing_migrate_api() {
 
   // Nodes - repertoire
   $repertoire_node_arguments = $node_arguments + array(
-    'machine_name' => 'RepertoireNode',
+    'machine_name' => 'Node_Repertoire',
     'description' => t('Import Drupal 6 repertoire nodes'),
     'source_type' => 'repertoire', 
     'destination_type' => 'repertoire',
@@ -155,29 +210,29 @@ function migrate_thirdwing_migrate_api() {
 
   // Nodes - nieuws
   $nieuws_node_arguments = $node_arguments + array(
-    'machine_name' => 'NieuwsNode',
+    'machine_name' => 'Node_Nieuws',
     'description' => t('Import Drupal 6 nieuws nodes'),
     'source_type' => 'nieuws', 
     'destination_type' => 'nieuws',
-    'dependencies' => array('User','ToegangTerm','File'),
+    'dependencies' => array('User','Term_Toegang','File','Image'),
   );
 
-  Migration::registerMigration('DrupalNode6Migration', $nieuws_node_arguments['machine_name'], $nieuws_node_arguments);
+  Migration::registerMigration('NieuwsNodeMigration', $nieuws_node_arguments['machine_name'], $nieuws_node_arguments);
 
   // Nodes - pagina
   $pagina_node_arguments = $node_arguments + array(
-    'machine_name' => 'PaginaNode',
+    'machine_name' => 'Node_Pagina',
     'description' => t('Import Drupal 6 pagina nodes'),
     'source_type' => 'pagina', 
     'destination_type' => 'pagina',
-    'dependencies' => array('User','ToegangTerm','File'),
+    'dependencies' => array('User','Term_Toegang','File','Image'),
   );
 
   Migration::registerMigration('PaginaNodeMigration', $pagina_node_arguments['machine_name'], $pagina_node_arguments);
 
   // Nodes - locatie
   $locatie_node_arguments = $node_arguments + array(
-    'machine_name' => 'LocatieNode',
+    'machine_name' => 'Node_Locatie',
     'description' => t('Import Drupal 6 locatie nodes'),
     'source_type' => 'locatie', 
     'destination_type' => 'locatie',
@@ -186,16 +241,38 @@ function migrate_thirdwing_migrate_api() {
 
   Migration::registerMigration('LocatieNodeMigration', $locatie_node_arguments['machine_name'], $locatie_node_arguments);
 
-  // Nodes - album
+  // Nodes - foto
   $album_node_arguments = $node_arguments + array(
-    'machine_name' => 'AlbumNode',
-    'description' => t('Import Drupal 6 album nodes'),
-    'source_type' => 'album', 
+    'machine_name' => 'Node_Album',
+    'description' => t('Import Drupal 6 Foto nodes into albums'),
+    'source_type' => 'foto', 
     'destination_type' => 'album',
-    'dependencies' => array('User','File','ActiviteitenNode','ToegangTerm'),
+    'dependencies' => array('User','File','Node_Activiteiten','Term_Toegang','Image'),
   );
 
   Migration::registerMigration('AlbumNodeMigration', $album_node_arguments['machine_name'], $album_node_arguments);
+
+  // Nodes - vriend
+  $vriend_node_arguments = $node_arguments + array(
+    'machine_name' => 'Node_Vriend',
+    'description' => t('Import Drupal 6 Vriend nodes'),
+    'source_type' => 'vriend', 
+    'destination_type' => 'vriend',
+    'dependencies' => array('User','File','Image'),
+  );
+
+  Migration::registerMigration('VriendNodeMigration', $vriend_node_arguments['machine_name'], $vriend_node_arguments);
+
+ // Nodes - nieuwsbrief
+  $nieuwsbrief_node_arguments = $node_arguments + array(
+    'machine_name' => 'Node_Nieuwsbrief',
+    'description' => t('Import Drupal 6 Nieuwsbrief nodes'),
+    'source_type' => 'nieuwsbrief', 
+    'destination_type' => 'nieuwsbrief',
+    'dependencies' => array('User','Node_Nieuws'),
+  );
+
+  Migration::registerMigration('NieuwsbriefNodeMigration', $nieuwsbrief_node_arguments['machine_name'], $nieuwsbrief_node_arguments);
 
   return $api;
 }
