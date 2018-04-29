@@ -94,6 +94,15 @@ class FilePartituurMigration extends DrupalFile6Migration {
   protected function query() {
     $query = parent::query();
 
+    $query->leftJoin('content_field_partij_band','b','b.field_partij_band_fid=f.fid');
+    $query->leftJoin('content_field_partij_koor_l','k','k.field_partij_koor_l_fid=f.fid');
+    $query->leftJoin('content_field_partij_tekst','t','t.field_partij_tekst_fid=f.fid');
+    $query->addField('b','nid','bnid');
+    $query->addField('k','nid','knid');
+    $query->addField('t','nid','tnid');
+    $query->addField('b','field_partij_band_data');
+    $query->addField('k','field_partij_koor_l_data');
+    $query->addField('t','field_partij_tekst_data');
     $query->condition('f.filepath','%repertoire%','LIKE');
     return $query;
 
@@ -105,7 +114,44 @@ class FilePartituurMigration extends DrupalFile6Migration {
       ->defaultValue(FALSE);
     $this->addFieldMapping('file_replace', NULL, FALSE)
       ->defaultValue(FILE_EXISTS_REPLACE);
+      
+    $this->addFieldMapping('field_partituur_soort', 'field_partituur_soort');
+    $this->addFieldMapping('field_bestand_nummer', 'field_bestand_nummer')
+         ->sourceMigration('Node_Repertoire');
+    $this->addFieldMapping('field_toegang', 'field_toegang')
+         ->sourceMigration('Term_Toegang');
 
+  }
+  public function prepareRow($row) {
+    if (parent::prepareRow($row) === FALSE) {
+      return FALSE;
+    }
+    
+    if ($row->bnid) { // Bandpartituur
+      if (strpos($row->field_partij_band_data, 'Toetsen') !== false )    { $row->field_partituur_soort = '11'; }
+      elseif (strpos($row->field_partij_band_data, 'Piano') !== false )  { $row->field_partituur_soort = '11'; }
+      elseif (strpos($row->field_partij_band_data, 'Gitaar') !== false ) { $row->field_partituur_soort = '12'; }
+      elseif (strpos($row->field_partij_band_data, 'Bas') !== false )    { $row->field_partituur_soort = '13'; }
+      elseif (strpos($row->field_partij_band_data, 'Drums') !== false )  { $row->field_partituur_soort = '14'; }
+      else {                                                               $row->field_partituur_soort = '10'; }
+      $row->field_bestand_nummer = $row->bnid;
+      $row->field_toegang = array(217, 86, 85);
+    }
+    elseif ($row->knid) { // Koorpartituur
+      if (strpos($row->field_partij_koor_l_data, 'MuseScore') !== false )    { $row->field_partituur_soort = '2'; }
+      else {                                                                   $row->field_partituur_soort = '1'; }
+      $row->field_bestand_nummer = $row->knid;
+      $row->field_toegang = array(217, 86, 28, 85);
+    }
+    elseif ($row->tnid) { // Tekst of koorregie
+      if (strpos($row->field_partij_tekst_data, 'Tekst en koorregie') !== false )    { $row->field_partituur_soort = '5'; }
+      elseif (strpos($row->field_partij_tekst_data, 'Koorregie') !== false )         { $row->field_partituur_soort = '4'; }
+      else {                                                                           $row->field_partituur_soort = '3'; }
+      $row->field_bestand_nummer = $row->tnid;
+      $row->field_toegang = array(217, 86, 28, 85);
+    }
+    
+    return TRUE;
   }
 }
 

@@ -4,7 +4,7 @@ class ActiviteitenNodeMigration extends DrupalNode6Migration {
   protected function query() {
     $query = parent::query();
 
-    $query->innerJoin('workflow_node','w','n.nid=w.nid');
+    $query->leftJoin('workflow_node','w','n.nid=w.nid');
     $query->addField('w','sid','workflow_stateid');
 
     return $query;
@@ -201,7 +201,7 @@ class PaginaNodeMigration extends DrupalNode6Migration {
   protected function query() {
     $query = parent::query();
 
-    $query->innerJoin('workflow_node','w','n.nid=w.nid');
+    $query->leftJoin('workflow_node','w','n.nid=w.nid');
     $query->addField('w','sid','workflow_stateid');
 
     return $query;
@@ -250,7 +250,7 @@ class NieuwsNodeMigration extends DrupalNode6Migration {
   protected function query() {
     $query = parent::query();
 
-    $query->innerJoin('workflow_node','w','n.nid=w.nid');
+    $query->leftJoin('workflow_node','w','n.nid=w.nid');
     $query->addField('w','sid','workflow_stateid');
 
     return $query;
@@ -303,7 +303,7 @@ class VriendNodeMigration extends DrupalNode6Migration {
   protected function query() {
     $query = parent::query();
 
-    $query->innerJoin('workflow_node','w','n.nid=w.nid');
+    $query->leftJoin('workflow_node','w','n.nid=w.nid');
     $query->addField('w','sid','workflow_stateid');
 
     return $query;

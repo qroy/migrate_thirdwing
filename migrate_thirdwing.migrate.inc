@@ -120,6 +120,7 @@ function migrate_thirdwing_migrate_api() {
     'source_dir' => 'http://www.thirdwing.nl/',
     'destination_dir' => 'public://',
     'bundle' => 'partituur',
+    'dependencies' => array('Node_Repertoire', 'Term_Toegang'),
   );
 
   Migration::registerMigration('FilePartituurMigration', $partituur_arguments['machine_name'], $partituur_arguments);
@@ -164,7 +165,7 @@ function migrate_thirdwing_migrate_api() {
     'machine_name' => 'MenuLink',
     'description' => t('Import Drupal 6 menu links'),
     'menu_migration' => 'Menu',
-    'node_migrations' => array('Node_Pagina'),
+    'node_migrations' => array('Node_Pagina','Node_Activiteiten','Node_Nieuws','Node_Repertoire','Node_Programma','Node_Locatie','Node_Album','Node_Vriend','Node_Nieuwsbrief'),
   );
 
   Migration::registerMigration('DrupalMenuLinks6Migration', $menu_link_arguments['machine_name'], $menu_link_arguments);
