@@ -151,6 +151,19 @@ function migrate_thirdwing_migrate_api() {
   );
 
   Migration::registerMigration('FileAudioMigration', $audio_arguments['machine_name'], $audio_arguments);
+  
+  // Video
+  $video_arguments = $common_arguments + array( 
+    'description' => t('Migration of video files from Drupal 6'), 
+    'machine_name' => 'Video',
+    'user_migration' => 'User',
+    'default_uid' => 1,
+    'source_type' => 'video',
+    'dependencies' => array('Node_Activiteiten','Node_Repertoire'),
+  );
+
+  Migration::registerMigration('FileVideoMigration', $video_arguments['machine_name'], $video_arguments);
+  
 
   // Menus
   $menu_arguments = $common_arguments + array(
