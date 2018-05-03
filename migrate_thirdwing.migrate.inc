@@ -158,7 +158,10 @@ function migrate_thirdwing_migrate_api() {
     'machine_name' => 'Video',
     'user_migration' => 'User',
     'default_uid' => 1,
+    'source_dir' => 'http://www.thirdwing.nl/',
+    'destination_dir' => 'youtube://',
     'source_type' => 'video',
+    'bundle' => 'video',
     'dependencies' => array('Node_Activiteiten','Node_Repertoire'),
   );
 
