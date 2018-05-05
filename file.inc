@@ -236,6 +236,14 @@ class FileAudioMigration extends DrupalFile6Migration {
 //      $this->queueMessage($message);
     }
     $row->field_toegang = $term;
+    
+    
+    if ($row->field_media_type == 'Uitvoering')       { $row->field_media_type = 1;}
+    elseif ($row->field_media_type == 'Repetitie')    { $row->field_media_type = 2;}
+    elseif ($row->field_media_type == 'Oefenbestand') { $row->field_media_type = 3;}
+    elseif ($row->field_media_type == 'Origineel')    { $row->field_media_type = 4;}
+    elseif ($row->field_media_type == 'Uitzending')   { $row->field_media_type = 5;}
+    elseif ($row->field_media_type == 'Overig')       { $row->field_media_type = 100;}
 	
     return TRUE;
   }
@@ -354,20 +362,27 @@ class FileVideoMigration extends DrupalMigration {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
     }
-    $term = array();
-    $term_query = Database::getConnection('default', $this->sourceConnection)
-      ->select('term_node', 't')
-      ->fields('t')
-      ->condition('t.nid',$row->nid)
-      ->condition('t.vid',$row->vid);
-    $term_query->leftJoin('term_data','td','td.tid=t.tid');
-    $term_query->condition('td.vid',4);
-    $term_result = $term_query->execute();
-    foreach ($term_result as $term_record) {
-      $term[] = $term_record->tid;
-    }
-    $row->field_toegang = $term;
+    
+    $row->field_toegang = thirdwing_migrate_returnterms($row->nid,$row->vid,4,$this->sourceConnection);
 	
     return TRUE;
   }
+}
+
+function thirdwing_migrate_returnterms($nid, $vid, $tvid, $sourceConnection) {
+
+  $term = array();
+  $term_query = Database::getConnection('default', $sourceConnection)
+    ->select('term_node', 't')
+    ->fields('t')
+    ->condition('t.nid',$nid)
+    ->condition('t.vid',$vid);
+  $term_query->leftJoin('term_data','td','td.tid=t.tid');
+  $term_query->condition('td.vid',$tvid);
+  $term_result = $term_query->execute();
+  foreach ($term_result as $term_record) {
+    $term[] = $term_record->tid;
+  }
+  return $term;
+
 }
