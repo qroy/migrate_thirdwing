@@ -60,21 +60,8 @@ class FileVerslagMigration extends DrupalFile6Migration {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
     }
-    $term = array();
-    $term_query = Database::getConnection('default', $this->sourceConnection)
-      ->select('term_node', 't')
-      ->fields('t')
-      ->condition('t.nid',$row->nid)
-      ->condition('t.vid',$row->vid);
-    $term_query->leftJoin('term_data','td','td.tid=t.tid');
-    $term_query->condition('td.vid',4);
-    $term_result = $term_query->execute();
-    foreach ($term_result as $term_record) {
-      $term[] = $term_record->tid;
-//      $message = 'NID ' . $row->nid . ' TID ' . $term_record->tid;
-//      $this->queueMessage($message);
-    }
-    $row->field_toegang = $term;
+    
+    $row->field_toegang = thirdwing_migrate_returnterms($row->nid,$row->vid,4,$this->sourceConnection);
     
     if ($row->field_verslag_soort == 131)       { $row->field_verslag_soort = 10;}
     elseif ($row->field_verslag_soort == 129)   { $row->field_verslag_soort = 20;}
@@ -221,22 +208,8 @@ class FileAudioMigration extends DrupalFile6Migration {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
     }
-    $term = array();
-    $term_query = Database::getConnection('default', $this->sourceConnection)
-      ->select('term_node', 't')
-      ->fields('t')
-      ->condition('t.nid',$row->nid)
-      ->condition('t.vid',$row->vid);
-    $term_query->leftJoin('term_data','td','td.tid=t.tid');
-    $term_query->condition('td.vid',4);
-    $term_result = $term_query->execute();
-    foreach ($term_result as $term_record) {
-      $term[] = $term_record->tid;
-//      $message = 'NID ' . $row->nid . ' TID ' . $term_record->tid;
-//      $this->queueMessage($message);
-    }
-    $row->field_toegang = $term;
     
+    $row->field_toegang = thirdwing_migrate_returnterms($row->nid,$row->vid,4,$this->sourceConnection);
     
     if ($row->field_media_type == 'Uitvoering')       { $row->field_media_type = 1;}
     elseif ($row->field_media_type == 'Repetitie')    { $row->field_media_type = 2;}
@@ -281,23 +254,10 @@ class FileVideoMigration extends DrupalMigration {
     // Source fields available.
     $this->sourceFields = array(
       'uri' => t('URI of a YouTube video'),
-      'description' => t('Description of the video'),
       'nid' => t('Node ID'),
-      'title' => t('Title'),  // @todo Depends on has_title, and label may be customized
-      'body' => t('Body'),
-      'format' => t('Format'),
-      'teaser' => t('Teaser'),
+      'vid' => t('Node revision ID'),
       'uid' => t('Authored by (uid)'),
-      'created' => t('Created timestamp'),
       'changed' => t('Modified timestamp'),
-      'status' => t('Published'),
-      'promote' => t('Promoted to front page'),
-      'sticky' => t('Sticky at top of lists'),
-      'revision' => t('Create new revision'),
-      'log' => t('Revision Log message'),
-      'language' => t('Language (fr, en, ...)'),
-      'tnid' => t('The translation set id for this node'),
-      'revision_uid' => t('Revision modified by author (uid)'),
       'field_media_uitvoerende' => t('Uitvoerende artiest'),
       'field_media_datum' => t('Datum'),
       'field_media_activiteit' => t('Gerelateerde activiteiten'),
@@ -309,14 +269,8 @@ class FileVideoMigration extends DrupalMigration {
     $this->source = new MigrateSourceSQL($this->query(),
       $this->sourceFields, NULL, $this->sourceOptions);
     
-    // In this case, we need to specify the file_class in the second paramter -
-    // this class understands how to translate a http://www.youtube.com/ URI
-    // into Drupal's Youtube file scheme (youtube://).
-    $this->destination = new MigrateDestinationMedia('video',
-      'MigrateExtrasFileYoutube');
-      
-    // We just need to map the 'value' in the media destination to the Youtube
-    // URI.
+    $this->destination = new MigrateDestinationFile($arguments['bundle'],'MyCustomMigrateFileYoutube');
+   
     $this->addFieldMapping('value', 'uri');
     $this->addFieldMapping('field_media_type', 'field_media_type');
     $this->addFieldMapping('field_media_uitvoerende', 'field_media_uitvoerende');
@@ -327,6 +281,27 @@ class FileVideoMigration extends DrupalMigration {
          ->sourceMigration('Node_Repertoire');
     $this->addFieldMapping('field_toegang', 'field_toegang')
          ->sourceMigration('Term_Toegang');
+
+    if (isset($arguments['default_uid'])) {
+      $default_uid = $arguments['default_uid'];
+    }
+    else {
+      $default_uid = 1;
+    }
+    if (isset($user_migration)) {
+      $this->addFieldMapping('uid', 'uid')
+           ->sourceMigration($user_migration)
+           ->defaultValue($default_uid);
+    }
+    else {
+      $this->addFieldMapping('uid')
+           ->defaultValue($default_uid);
+    }
+
+    $this->addFieldMapping('timestamp', NULL, FALSE);
+
+    $this->addUnmigratedSources(array('nid','vid','changed'));
+    $this->addUnmigratedDestinations(array('field_media_bijzonderheden', 'path','field_media_datum:timezone','field_media_datum:rrule','field_media_datum:to'));
   }
   
     /**
@@ -337,21 +312,17 @@ class FileVideoMigration extends DrupalMigration {
   protected function query() {
     $query = Database::getConnection('default', $this->sourceConnection)
              ->select('node', 'n')
-             ->fields('n', array('nid', 'vid', 'language', 'title',
-                 'uid', 'status', 'created', 'changed', 'comment', 'promote',
-                 'moderate', 'sticky', 'tnid', 'translate'))
+             ->fields('n', array('nid', 'vid', 'uid', 'changed'))
              ->condition('n.type', $this->sourceType)
              ->orderBy($this->newOnly ? 'n.nid' : 'n.changed');
-    $query->innerJoin('node_revisions', 'nr', 'n.vid=nr.vid');
     $query->innerJoin('content_field_video','v','v.nid=n.nid AND v.vid=n.vid');
     $query->leftJoin('content_field_audio_type','t','t.nid=n.nid AND t.vid=n.vid');
     $query->leftJoin('content_field_audio_uitvoerende','u','u.nid=n.nid AND u.vid=n.vid');
     $query->leftJoin('content_field_datum','d','d.nid=n.nid AND d.vid=n.vid');
     $query->leftJoin('content_field_ref_activiteit','a','a.nid=n.nid AND a.vid=n.vid');
     $query->leftJoin('content_field_repertoire','r','r.nid=n.nid AND r.vid=n.vid');
-    $query->fields('nr', array('body', 'teaser', 'format'));
     $query->addField('v','field_video_embed','uri');
-    $query->addField('v','field_video_description','description');
+    $query->addField('t','field_audio_type_value','field_media_type');
     $query->addField('u','field_audio_uitvoerende_value','field_media_uitvoerende');
     $query->addField('d','field_datum_value','field_media_datum');
     $query->addField('a','field_ref_activiteit_nid','field_media_activiteit');
@@ -364,8 +335,84 @@ class FileVideoMigration extends DrupalMigration {
     }
     
     $row->field_toegang = thirdwing_migrate_returnterms($row->nid,$row->vid,4,$this->sourceConnection);
+    
+    if ($row->field_media_type == 'Uitvoering')       { $row->field_media_type = 1;}
+    elseif ($row->field_media_type == 'Repetitie')    { $row->field_media_type = 2;}
+    elseif ($row->field_media_type == 'Oefenbestand') { $row->field_media_type = 3;}
+    elseif ($row->field_media_type == 'Origineel')    { $row->field_media_type = 4;}
+    elseif ($row->field_media_type == 'Uitzending')   { $row->field_media_type = 5;}
+    elseif ($row->field_media_type == 'Overig')       { $row->field_media_type = 100;}
 	
     return TRUE;
+  }
+}
+
+/**
+ * Custom Class extending MigrateExtrasFileYoutube to allow for file fields.
+ */
+class MyCustomMigrateFileYoutube extends MigrateExtrasFileYoutube {
+
+  /**
+   * __construct method proposed as part of patch in #2
+   */
+  public function __construct($arguments = array(), $default_file = NULL) {
+    if ($default_file) {
+      $this->defaultFile = $default_file;
+    }
+    else {
+      $this->defaultFile = new stdClass;
+    }
+  }
+
+  /**
+   * Implementation of MigrateFileInterface::processFiles().
+   *
+   * @param $value
+   *  The URI or local filespec of a file to be imported.
+   * @param $owner
+   *  User ID (uid) to be the owner of the file.
+   * @return object
+   *  The file entity being created or referenced.
+   */
+  public function processFile($value, $owner) {
+    // Convert the Youtube URI into a local stream wrapper.
+    if (class_exists('MediaInternetYouTubeHandler')) {
+      $handler = new MediaInternetYouTubeHandler($value);
+      $destination = $handler->parse($value);
+      $file = file_uri_to_object($destination, TRUE);
+    }
+    elseif (class_exists('MediaInternetOEmbedHandler')) {
+      $handler = new MediaInternetOEmbedHandler($value);
+      $file = $handler->getFileObject();
+    }
+    else {
+      MigrationBase::displayMessage(t('Could not find a handler for YouTube videos'));
+      return FALSE;
+    }
+
+    /**
+      * code to map the fields, proposed as part of patch in #2
+      */
+    // Both file_uri_to_object() and MediaInternetOEmbedHandler::getFileObject()
+    // give us a brand new file object, whereas we have default values from
+    // Migrate's field mappings that we want to include.
+    $file_original_data = (array) $this->defaultFile;
+    foreach ($file_original_data as $property => $value) {
+      $file->{$property} = $value;
+    }
+
+    // Create a file entity object for this Youtube reference, and see if we
+    // can get the video title.
+    if (empty($file->fid) && $info = $handler->getOEmbed()) {
+      $file->filename = truncate_utf8($info['title'], 255);
+    }
+    $file = file_save($file);
+    if (is_object($file)) {
+      return $file;
+    }
+    else {
+      return FALSE;
+    }
   }
 }
 
