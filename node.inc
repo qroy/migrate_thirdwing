@@ -369,14 +369,5 @@ class NieuwsbriefNodeMigration extends DrupalNode6Migration {
          ->sourceMigration('Term_Toegang');
 
   }
-  
-  public function prepareRow($row) {
-    if (parent::prepareRow($row) === FALSE) {
-      return FALSE;
-    }
-
-    $row->field_nieuwsbrief = 319;
-    return TRUE;
-  }
 
 }

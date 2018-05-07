@@ -291,7 +291,49 @@ function migrate_thirdwing_migrate_api() {
 
   Migration::registerMigration('NieuwsbriefNodeMigration', $nieuwsbrief_node_arguments['machine_name'], $nieuwsbrief_node_arguments);
 
+ // Comments
+
+  $comment_arguments = $common_arguments + array(
+    'user_migration' => 'User',
+    'default_uid' => 1,
+  );
+
+
+ // Comments - Nieuws
+  $nieuws_comment_arguments = $comment_arguments + array(
+    'machine_name' => 'Comment_Nieuws',
+    'description' => t('Import Drupal 6 comments for nieuws nodes'),
+    'source_type' => 'nieuws', 
+    'destination_type' => 'nieuws',
+    'node_migration' => 'Node_Nieuws',
+  );
+
+  Migration::registerMigration('DrupalComment6Migration', $nieuws_comment_arguments['machine_name'], $nieuws_comment_arguments);
+
+ // Comments - Activiteiten
+  $activiteit_comment_arguments = $comment_arguments + array(
+    'machine_name' => 'Comment_Activiteit',
+    'description' => t('Import Drupal 6 comments for activiteit nodes'),
+    'source_type' => 'activiteit', 
+    'destination_type' => 'activiteit',
+    'node_migration' => 'Node_Activiteiten',
+  );
+
+  Migration::registerMigration('DrupalComment6Migration', $activiteit_comment_arguments['machine_name'], $activiteit_comment_arguments);
+
+ // Comments - Pagina's
+  $pagina_comment_arguments = $comment_arguments + array(
+    'machine_name' => 'Comment_Pagina',
+    'description' => t('Import Drupal 6 comments for pagina nodes'),
+    'source_type' => 'pagina', 
+    'destination_type' => 'pagina',
+    'node_migration' => 'Node_Pagina',
+  );
+
+  Migration::registerMigration('DrupalComment6Migration', $pagina_comment_arguments['machine_name'], $pagina_comment_arguments);
+
   return $api;
+
 }
 
 ?>
