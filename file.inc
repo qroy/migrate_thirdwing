@@ -4,7 +4,8 @@ class FileDocMigration extends DrupalFile6Migration {
   protected function query() {
     $query = parent::query();
   
-    $query->condition('f.filemime',array('image/jpeg','image/png','image/gif','audio/mpeg'),'NOT IN');
+    $query->condition('f.filemime','%image%','NOT LIKE');
+    $query->condition('f.filemime','%audio%','NOT LIKE');
     $query->condition('f.filepath','%verslagen%','NOT LIKE');
     $query->condition('f.filepath','%repertoire%','NOT LIKE');
     return $query;
